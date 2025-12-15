@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>wpy</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="header-fade"></div>
+
+  <div id="bg-container" class="background-container">
+    <div class="overlay"></div>
+    <div class="dot-overlay"></div>
+  </div>
+
+  <div class="layout">
+    <div class="header">
+      <div class="title-wrap">
+        <h1 id="wpy-title">wpy</h1>
+        <p class="subtitle">illustration × art toys</p>
+      </div>
+      <nav>
+        <button class="tab-button" data-tab="about"><span class="label">Intro</span></button>
+        <button class="tab-button" data-tab="works"><span class="label">Works</span></button>
+        <button class="tab-button" data-tab="contact"><span class="label">Hello</span></button>
+      </nav>
+    </div>
+
+    <div class="main">
+
+      <!-- 非表示 update セクション -->
+      <div class="tab-content update-section">
+        <div class="content-inner">
+          <h2 class="log-heading">update</h2>
+          <div class="update-note">
+            <strong>2025.04.01</strong> — ここをリニューアルしました
+          </div>
+        </div>
+      </div>
+
+      <div id="about" class="tab-content">
+        <div class="content-inner">
+          <h2>About Me</h2>
+          <img src="pfp.jpg" alt="pfp" class="pfp">
+          <p>ワーピー（wpy）は、絵を描いたり置き物を作ったりしている個人作家です。</p>
+          <p>平面と立体、虚構と現実のあいだをふらふらと行き来しながら、
+            ふと手に取って、そばに置いておきたくなるような作品づくりを目指しています。</p>
+          <p>近況やお知らせ、制作過程をSNS（主にX）で垂れ流しつつ、ときどき販売や展示も行っています。</p>
+          <a href="https://x.com/warpshoot" target="_blank">
+            <img src="xlogo.png" alt="X" class="xlogo">
+          </a>
+        </div>
+      </div>
+
+      <div id="works" class="tab-content">
+        <div class="content-inner">
+          <h2>Works</h2>
+          <ul class="link-list">
+            <li><a href="https://warpshoot.neocities.org/holem" target="_blank">HOLEM（"HOLEM"コンセプト）</a></li>
+            <li><a href="https://note.com/wpy" target="_blank">note（雑記）</a></li>
+            <li><a href="https://pin.it/BM21t3Wqk" target="_blank">ITEMS by wpy（過去作品アーカイブ）</a></li>
+          </ul><br>
+          <p>作品の一部は以下の外部サイトで展示/販売中</p>
+          <ul class="link-list">
+            <li><a href="https://minne.com/@warpshoot" target="_blank">MABOROSHI BAZAAR（置き物の不定期販売）</a></li>
+            <li><a href="https://suzuri.jp/wpy" target="_blank">SUZURI（その他グッズ）</a></li>
+            <li><a href="https://line.me/S/shop/sticker/author/28817" target="_blank">LINE Stickers（LINEスタンプ）</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div id="contact" class="tab-content">
+        <div class="content-inner">
+          <h2>Contact</h2>
+          <p>X（Twitter）などSNSよりご連絡ください。<br>
+            相談は無料です。お気軽に。</p>
+          <a href="https://x.com/warpshoot" target="_blank">
+            <img src="xlogo.png" alt="X" class="xlogo">
+          </a>
+        </div>
+      </div>
+
+      <div class="footer">&copy; 2025 wpy / warpshoot</div>
+      <div class="footer-fade"></div>
+    </div>
+  </div>
+
+  <script>
+    const buttons = document.querySelectorAll('.tab-button');
+    const tabs = document.querySelectorAll('.tab-content');
+    let currentTab = null;
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const selectedTab = btn.dataset.tab;
+        if (currentTab === selectedTab) return;
+        buttons.forEach(b => b.classList.remove('active'));
+        tabs.forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        const tab = document.getElementById(selectedTab);
+        if (tab) tab.classList.add('active');
+        currentTab = selectedTab;
+      });
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const wpyTitle = document.getElementById("wpy-title");
+      if (wpyTitle) {
+        wpyTitle.addEventListener("click", () => location.reload());
+      }
+    });
+  </script>
+
+  <script>
+    const imagePaths = [
+      "img/01.jpg", "img/02.jpg", "img/03.gif", "img/04.jpg", "img/05.jpg",
+      "img/06.png", "img/07.gif", "img/08.jpg", "img/09.gif", "img/10.jpg", "img/11.gif"
+    ];
+
+    const bgContainer = document.getElementById("bg-container");
+    const images = imagePaths.map((path, index) => {
+      const img = document.createElement("img");
+      img.src = path;
+      img.className = "background-image";
+      if (index === 0) img.classList.add("active");
+      bgContainer.appendChild(img);
+      return img;
+    });
+
+    let currentIndex = 0;
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    const shuffledImages = shuffle([...images]);
+
+    function changeBackground() {
+      shuffledImages.forEach(img => {
+        img.style.opacity = "0";
+        img.style.filter = "blur(20px)";
+      });
+      const currentImage = shuffledImages[currentIndex];
+      currentImage.style.opacity = "1";
+      currentImage.style.filter = "blur(6px)";
+      currentIndex = (currentIndex + 1) % shuffledImages.length;
+    }
+
+    setTimeout(() => {
+      const currentImage = shuffledImages[currentIndex];
+      currentImage.style.opacity = "1";
+      currentImage.style.filter = "blur(6px)";
+    }, 50);
+
+    setTimeout(() => {
+      changeBackground();
+      setInterval(changeBackground, 7000);
+    }, 500);
+  </script>
+</body>
+</html>
