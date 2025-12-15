@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>wpy</title>
   <link rel="icon" href="favicon.png" type="image/png">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 
 <body>
@@ -24,10 +24,9 @@
         <p class="subtitle">illustration × art toys</p>
       </div>
       <nav>
-        <button class="tab-button" data-tab="about"><span class="label">Intro</span></button>
-        <button class="tab-button" data-tab="works"><span class="label">Works</span></button>
+        <button class="tab-button" data-tab="links"><span class="label">Links</span></button>
         <button class="tab-button" data-tab="gallery"><span class="label">Gallery</span></button>
-        <button class="tab-button" data-tab="contact"><span class="label">Hello</span></button>
+        <button class="tab-button" data-tab="hello"><span class="label">Hello</span></button>
       </nav>
     </div>
 
@@ -43,23 +42,9 @@
         </div>
       </div>
 
-      <div id="about" class="tab-content">
+      <div id="links" class="tab-content">
         <div class="content-inner">
-          <h2>About Me</h2>
-          <img src="pfp.jpg" alt="pfp" class="pfp">
-          <p>ワーピー（wpy）は、絵を描いたり置き物を作ったりしている個人作家です。</p>
-          <p>平面と立体、虚構と現実のあいだをふらふらと行き来しながら、
-            ふと手に取って、そばに置いておきたくなるような作品づくりを目指しています。</p>
-          <p>近況やお知らせ、制作過程をSNS（主にX）で垂れ流しつつ、ときどき販売や展示も行っています。</p>
-          <a href="https://x.com/warpshoot" target="_blank">
-            <img src="xlogo.png" alt="X" class="xlogo">
-          </a>
-        </div>
-      </div>
-
-      <div id="works" class="tab-content">
-        <div class="content-inner">
-          <h2>Works</h2>
+          <h2>Links</h2>
           <ul class="link-list">
             <li><a href="https://warpshoot.neocities.org/holem" target="_blank">HOLEM（"HOLEM"コンセプト）</a></li>
             <li><a href="https://note.com/wpy" target="_blank">note（雑記）</a></li>
@@ -74,9 +59,17 @@
         </div>
       </div>
 
-      <div id="contact" class="tab-content">
+      <div id="hello" class="tab-content">
         <div class="content-inner">
-          <h2>Contact</h2>
+          <h2>Hello</h2>
+          <img src="pfp.jpg" alt="pfp" class="pfp">
+          <p>ワーピー（wpy）は、絵を描いたり置き物を作ったりしている個人作家です。</p>
+          <p>平面と立体、虚構と現実のあいだをふらふらと行き来しながら、
+            ふと手に取って、そばに置いておきたくなるような作品づくりを目指しています。</p>
+          <p>近況やお知らせ、制作過程をSNS（主にX）で垂れ流しつつ、ときどき販売や展示も行っています。</p>
+
+          <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 30px 0;">
+
           <p>X（Twitter）などSNSよりご連絡ください。<br>
             相談は無料です。お気軽に。</p>
           <a href="https://x.com/warpshoot" target="_blank">
@@ -223,6 +216,11 @@
         if (event.target === lightbox) {
           lightbox.style.display = "none";
         }
+      }
+
+      // Close if clicking the image itself
+      lightboxImg.onclick = function () {
+        lightbox.style.display = "none";
       }
 
       // Close on Escape key

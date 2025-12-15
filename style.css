@@ -390,15 +390,27 @@ button.tab-button .label {
   position: fixed;
   z-index: 2000;
   /* Highest */
-  padding-top: 50px;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
+  /* Prevent body scroll effect inside */
   background-color: rgba(0, 0, 0, 0.95);
   backdrop-filter: blur(5px);
   animation: fadeIn 0.3s;
+  /* Flex centering */
+  display: none;
+  /* Reset by JS */
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure display:flex when active - handled by class or JS style override?
+   Actually JS sets display:block. We need !important or change JS.
+   Better specific rule: */
+.lightbox[style*="display: block"] {
+  display: flex !important;
 }
 
 .lightbox-content {
