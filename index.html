@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
   <link rel="icon" href="favicon.png" type="image/png">
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div class="header-fade"></div>
 
@@ -24,6 +26,7 @@
       <nav>
         <button class="tab-button" data-tab="about"><span class="label">Intro</span></button>
         <button class="tab-button" data-tab="works"><span class="label">Works</span></button>
+        <button class="tab-button" data-tab="gallery"><span class="label">Gallery</span></button>
         <button class="tab-button" data-tab="contact"><span class="label">Hello</span></button>
       </nav>
     </div>
@@ -80,6 +83,24 @@
             <img src="xlogo.png" alt="X" class="xlogo">
           </a>
         </div>
+      </div>
+
+      <!-- GALLERY SECTION -->
+      <div id="gallery" class="tab-content">
+        <div class="content-inner" style="max-width: 900px;"> <!-- Gallery needs more width -->
+          <h2>Gallery</h2>
+          <p style="margin-bottom: 20px; opacity: 0.7; font-size: 0.9rem;">Click image to enlarge</p>
+          <div id="gallery-grid" class="gallery-grid">
+            <!-- JS will populate this -->
+          </div>
+        </div>
+      </div>
+
+      <!-- LIGHTBOX -->
+      <div id="lightbox" class="lightbox">
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-content" id="lightbox-img">
+        <div id="caption"></div>
       </div>
 
       <div class="footer">&copy; 2025 wpy / warpshoot</div>
@@ -162,5 +183,56 @@
       setInterval(changeBackground, 7000);
     }, 500);
   </script>
+
+  <!-- GALLERY & LIGHTBOX LOGIC -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const galleryGrid = document.getElementById("gallery-grid");
+      const lightbox = document.getElementById("lightbox");
+      const lightboxImg = document.getElementById("lightbox-img");
+      const closeBtn = document.querySelector(".lightbox-close");
+
+      // Populate GalleryGrid using imagePaths (defined in previous script)
+      // Reverse to show newest (assuming high number = new) first? Or just existing order.
+      // Let's use existing order for now.
+      imagePaths.forEach(path => {
+        const item = document.createElement("div");
+        item.className = "gallery-item";
+
+        const img = document.createElement("img");
+        img.src = path;
+        img.loading = "lazy"; // Performance
+
+        item.appendChild(img);
+        galleryGrid.appendChild(item);
+
+        // Click to Open Lightbox
+        item.addEventListener("click", () => {
+          lightbox.style.display = "block";
+          lightboxImg.src = path;
+        });
+      });
+
+      // Close Lightbox behaviors
+      closeBtn.onclick = function () {
+        lightbox.style.display = "none";
+      }
+
+      lightbox.onclick = function (event) {
+        // Close if clicking outside the image
+        if (event.target === lightbox) {
+          lightbox.style.display = "none";
+        }
+      }
+
+      // Close on Escape key
+      document.addEventListener('keydown', function (event) {
+        if (event.key === "Escape" && lightbox.style.display === "block") {
+          lightbox.style.display = "none";
+        }
+      });
+    });
+  </script>
 </body>
+
 </html>
