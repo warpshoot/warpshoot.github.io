@@ -108,13 +108,13 @@
       font-size: clamp(38px, 11vmin, 120px);
       font-weight: 700;
       letter-spacing: 0.18em;
-      color: #ff6b6b;
-      text-shadow: 0 0 12px rgba(255, 107, 107, 0.8), 3px 3px 0 #5c0e0e;
+      color: #aaffcf;
+      text-shadow: 0 0 12px rgba(111, 255, 168, 0.9), 0 0 32px rgba(111, 255, 168, 0.45), 3px 3px 0 #0e5c33;
     }
     #gameover .go-cause {
       font-size: clamp(13px, 3vmin, 24px);
       letter-spacing: 0.25em;
-      color: #ffd7d7;
+      color: #d7ffe8;
     }
     #gameover .go-score {
       font-size: clamp(13px, 3vmin, 24px);
@@ -274,7 +274,7 @@
             x: player.x, y: player.y,
             vx: Math.cos(a) * v, vy: Math.sin(a) * v,
             life: 40 + Math.random() * 40,
-            c: ["#aaffcf", "#ffffff", "#ffb347", "#ff6b6b"][i % 4],
+            c: ["#aaffcf", "#eafff2", "#7cffb0", "#2fae6e"][i % 4],
             s: 2 + Math.random() * 4,
           });
         }
@@ -466,7 +466,7 @@
               b.hit = true;
               score += 10;
               boss.hp = Math.max(0.94, boss.hp - 0.0015);
-              explode(b.x, b.y, "#ffd166", 4);
+              explode(b.x, b.y, "#c8ffe3", 4);
             }
           }
           bullets = bullets.filter(b => !b.hit);
@@ -508,7 +508,7 @@
         ctx.rotate(tilt);
 
         // エンジン炎
-        ctx.fillStyle = Math.random() > 0.5 ? "#ffd166" : "#ff8c42";
+        ctx.fillStyle = Math.random() > 0.5 ? "#eafff2" : "#7cffb0";
         const fl = 8 + Math.random() * 10;
         ctx.beginPath();
         ctx.moveTo(-4, 16); ctx.lineTo(4, 16); ctx.lineTo(0, 16 + fl);
@@ -593,12 +593,12 @@
         const bx = (W - bw) / 2, by = H * 0.085;
         ctx.textAlign = "center";
         ctx.font = `700 ${Math.min(W, H) * 0.03}px "Courier New", monospace`;
-        ctx.fillStyle = "#ff8f8f";
+        ctx.fillStyle = "#aaffcf";
         ctx.fillText("GIANT WPY", W / 2, by - 8);
-        ctx.strokeStyle = "rgba(255,143,143,0.8)";
+        ctx.strokeStyle = "rgba(170,255,207,0.8)";
         ctx.lineWidth = 1.5;
         ctx.strokeRect(bx, by, bw, 10);
-        ctx.fillStyle = "#ff6b6b";
+        ctx.fillStyle = "#7cffb0";
         ctx.fillRect(bx + 1.5, by + 1.5, (bw - 3) * boss.hp, 7);
       }
 
@@ -649,13 +649,13 @@
             drawBossUI();
           }
 
-          // 敵弾
+          // 敵弾(ホーミング弾は大きめ+明滅で区別)
           for (const b of ebullets) {
             ctx.beginPath();
-            ctx.arc(b.x, b.y, b.homing ? 7 : 5, 0, Math.PI * 2);
-            ctx.fillStyle = b.homing ? "#ff6b6b" : "#ffd166";
+            ctx.arc(b.x, b.y, b.homing ? (Math.floor(now / 90) % 2 ? 8 : 6.5) : 5, 0, Math.PI * 2);
+            ctx.fillStyle = b.homing ? "#eafff2" : "#9fffc9";
             ctx.shadowColor = ctx.fillStyle;
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = b.homing ? 18 : 10;
             ctx.fill();
             ctx.shadowBlur = 0;
           }
@@ -663,20 +663,20 @@
           // WARNING 演出
           if (state === "play" && phase === "warning") {
             const blink = Math.floor(now / 220) % 2;
-            ctx.fillStyle = `rgba(255,40,40,${blink ? 0.14 : 0.05})`;
+            ctx.fillStyle = `rgba(111,255,168,${blink ? 0.12 : 0.04})`;
             ctx.fillRect(0, H * 0.3, W, H * 0.32);
             if (blink) {
               ctx.textAlign = "center";
               ctx.font = `700 ${Math.min(W, H) * 0.1}px "Courier New", monospace`;
-              ctx.fillStyle = "#ff5252";
-              ctx.shadowColor = "#ff5252";
+              ctx.fillStyle = "#eafff2";
+              ctx.shadowColor = "#7cffb0";
               ctx.shadowBlur = 24;
               ctx.fillText("WARNING!", W / 2, H * 0.44);
               ctx.shadowBlur = 0;
             }
             ctx.textAlign = "center";
             ctx.font = `${Math.min(W, H) * 0.028}px "Courier New", monospace`;
-            ctx.fillStyle = "#ffb0b0";
+            ctx.fillStyle = "#9fffc9";
             ctx.fillText("A HUGE WPY IS APPROACHING FAST", W / 2, H * 0.52);
           }
 
