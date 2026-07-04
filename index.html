@@ -3,160 +3,480 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>wpy</title>
   <link rel="icon" href="favicon.png" type="image/png">
-  <link rel="stylesheet" href="style.css?v=2">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: #0d0e16;
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    #stage { position: fixed; inset: 0; overflow: hidden; }
+
+    /* 右下: バリアント切り替えボタン */
+    #next-btn {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      width: 34px;
+      height: 34px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(128, 128, 128, 0.18);
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      z-index: 50;
+      transition: background 0.25s, transform 0.25s;
+    }
+    #next-btn:hover { background: rgba(128, 128, 128, 0.35); transform: rotate(90deg); }
+
+    /* ============ variant: FLOAT ============ */
+    .v-float { position: absolute; inset: 0; cursor: crosshair; }
+    .v-float canvas { display: block; width: 100%; height: 100%; }
+
+    /* ============ variant: TYPE ============ */
+    .v-type {
+      position: absolute; inset: 0;
+      background: var(--bg, #f4f1ea);
+      transition: background 0.6s ease;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .v-type .stripes {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; justify-content: space-around;
+      opacity: 0.5;
+    }
+    .v-type .stripe {
+      white-space: nowrap;
+      font-weight: 900;
+      font-size: clamp(28px, 6vmin, 64px);
+      letter-spacing: 0.08em;
+      color: transparent;
+      -webkit-text-stroke: 1.5px var(--ink, #1c1b18);
+      opacity: 0.22;
+      will-change: transform;
+      transition: -webkit-text-stroke-color 0.6s ease;
+    }
+    .v-type .stripe > span { display: inline-block; animation: slide var(--dur, 40s) linear infinite; }
+    .v-type .stripe.rev > span { animation-direction: reverse; }
+    @keyframes slide { to { transform: translateX(-50%); } }
+
+    .v-type .word {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.02em;
+      font-weight: 900;
+      font-size: clamp(90px, 26vmin, 300px);
+      color: var(--ink, #1c1b18);
+      transition: color 0.6s ease;
+    }
+    .v-type .word span {
+      display: inline-block;
+      animation: bob 3.2s ease-in-out infinite;
+      cursor: pointer;
+    }
+    .v-type .word span:nth-child(2) { animation-delay: -1.1s; }
+    .v-type .word span:nth-child(3) { animation-delay: -2.2s; }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+      50% { transform: translateY(-4.5%) rotate(1.5deg); }
+    }
+    .v-type .word span.spin { animation: spin 0.7s cubic-bezier(0.3, 0.1, 0.3, 1); }
+    @keyframes spin {
+      from { transform: rotate(0) scale(1); }
+      50% { transform: rotate(180deg) scale(1.25); }
+      to { transform: rotate(360deg) scale(1); }
+    }
+    .v-type .mascot {
+      position: absolute;
+      left: 50%; bottom: 7%;
+      width: clamp(48px, 10vmin, 96px);
+      transform: translateX(-50%);
+      image-rendering: pixelated;
+      filter: var(--mascot-filter, none);
+      transition: filter 0.6s ease;
+      animation: mascot-sway 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes mascot-sway {
+      0%, 100% { transform: translateX(-50%) rotate(-6deg); }
+      50% { transform: translateX(-50%) rotate(6deg); }
+    }
+
+    /* ============ variant: ARCADE ============ */
+    .v-arcade {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 45%, #10231a 0%, #060d09 75%);
+      color: #6fffa8;
+      font-family: "Courier New", ui-monospace, monospace;
+      text-align: center;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .v-arcade .crt {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 3.2vmin;
+      animation: flicker 4s steps(2) infinite;
+    }
+    @keyframes flicker { 0%, 96% { opacity: 1; } 98% { opacity: 0.88; } 100% { opacity: 1; } }
+    .v-arcade .scanlines {
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0) 2px,
+        rgba(0, 0, 0, 0.28) 3px, rgba(0, 0, 0, 0.28) 4px
+      );
+      pointer-events: none;
+      z-index: 5;
+    }
+    .v-arcade .hud {
+      position: absolute; top: 3.5%; left: 0; right: 0;
+      display: flex; justify-content: space-between;
+      padding: 0 5%;
+      font-size: clamp(11px, 2.4vmin, 18px);
+      letter-spacing: 0.2em;
+      opacity: 0.85;
+    }
+    .v-arcade .logo {
+      font-size: clamp(64px, 20vmin, 220px);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      line-height: 1;
+      color: #aaffcf;
+      text-shadow:
+        0 0 8px rgba(111, 255, 168, 0.9),
+        0 0 32px rgba(111, 255, 168, 0.45),
+        4px 4px 0 #0e5c33;
+      animation: logo-pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes logo-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+    .v-arcade .sub {
+      font-size: clamp(12px, 3vmin, 24px);
+      letter-spacing: 0.45em;
+      text-indent: 0.45em;
+      opacity: 0.9;
+    }
+    .v-arcade .press {
+      font-size: clamp(13px, 3.2vmin, 26px);
+      letter-spacing: 0.3em;
+      text-indent: 0.3em;
+      animation: blink 1.1s steps(1) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+    .v-arcade .copyright {
+      position: absolute; bottom: 3.5%; left: 0; right: 0;
+      font-size: clamp(10px, 2.2vmin, 16px);
+      letter-spacing: 0.25em;
+      opacity: 0.6;
+    }
+    .v-arcade .walker {
+      position: absolute; bottom: 11%; left: 0;
+      width: clamp(40px, 9vmin, 80px);
+      image-rendering: pixelated;
+      /* 黒ドット絵 → 蛍光グリーンに変換 */
+      filter: invert(1) sepia(1) saturate(4) hue-rotate(75deg) brightness(1.15);
+      animation: walk 13s linear infinite, hop 0.45s steps(2) infinite;
+      pointer-events: none;
+      z-index: 2;
+    }
+    @keyframes walk { from { transform: translateX(-15vmin); } to { transform: translateX(105vw); } }
+    @keyframes hop { 50% { margin-bottom: 1.4vmin; } }
+    .v-arcade.zap .crt { animation: zap-flash 0.35s steps(2); }
+    @keyframes zap-flash { 0% { filter: invert(1); } 100% { filter: none; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .v-type .stripe > span, .v-type .word span, .v-type .mascot,
+      .v-arcade .crt, .v-arcade .logo, .v-arcade .walker {
+        animation-duration: 0.01s;
+        animation-iteration-count: 1;
+      }
+      .v-arcade .press { animation: none; }
+    }
+  </style>
 </head>
 
 <body>
-  <div class="header-fade"></div>
+  <div id="stage"></div>
+  <button id="next-btn" title="switch" aria-label="switch view">↻</button>
 
-  <div id="bg-container" class="background-container">
-    <div class="overlay"></div>
-    <div class="dot-overlay"></div>
-  </div>
+  <script>
+    (() => {
+      const stage = document.getElementById("stage");
+      const ICON = "favicon.png";
 
-  <div class="layout">
-    <div class="header">
-      <div class="title-wrap">
-        <h1 id="wpy-title">wpy</h1>
-        <p class="subtitle">illustration × art toys</p>
-      </div>
-      <nav>
-        <button class="tab-button" data-tab="hello"><span class="label">Hello</span></button>
-        <button class="tab-button" data-tab="links"><span class="label">Links</span></button>
-      </nav>
-    </div>
+      /* ---------------------------------------------------------
+         variant 1: FLOAT — 漂うマスコットの群れ。クリックで波紋。
+      --------------------------------------------------------- */
+      function makeFloat(root, icon) {
+        root.className = "v-float";
+        const canvas = document.createElement("canvas");
+        root.appendChild(canvas);
+        const ctx = canvas.getContext("2d");
 
-    <div class="main">
+        const TINTS = ["#8ecae6", "#ffb4a2", "#cdb4db", "#ffd166", "#95d5b2", "#e8e8f0"];
+        const tinted = TINTS.map(color => {
+          const c = document.createElement("canvas");
+          c.width = c.height = 64;
+          const g = c.getContext("2d");
+          g.drawImage(icon, 0, 0);
+          g.globalCompositeOperation = "source-in";
+          g.fillStyle = color;
+          g.fillRect(0, 0, 64, 64);
+          return c;
+        });
 
-      <!-- 非表示 update セクション -->
-      <div class="tab-content update-section">
-        <div class="content-inner">
-          <h2 class="log-heading">update</h2>
-          <div class="update-note">
-            <strong>2026.01.01</strong> — ここをリニューアルしました
+        let W, H, dpr;
+        function resize() {
+          dpr = Math.min(devicePixelRatio || 1, 2);
+          W = root.clientWidth; H = root.clientHeight;
+          canvas.width = W * dpr; canvas.height = H * dpr;
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        resize();
+
+        const N = Math.round(Math.min(52, Math.max(26, (W * H) / 26000)));
+        const sprites = [];
+        for (let i = 0; i < N; i++) {
+          sprites.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            size: 22 + Math.random() * 46,
+            vx: (Math.random() - 0.5) * 0.35,
+            vy: (Math.random() - 0.5) * 0.35,
+            kx: 0, ky: 0,                       // クリックの反動
+            rot: Math.random() * Math.PI * 2,
+            vr: (Math.random() - 0.5) * 0.012,
+            phase: Math.random() * Math.PI * 2,
+            img: tinted[i % tinted.length],
+            alpha: 0.5 + Math.random() * 0.5,
+          });
+        }
+
+        function poke(px, py) {
+          for (const s of sprites) {
+            const dx = s.x - px, dy = s.y - py;
+            const d = Math.hypot(dx, dy) + 1;
+            const f = Math.min(9, 420 / d);
+            s.kx += (dx / d) * f;
+            s.ky += (dy / d) * f;
+            s.vr += (Math.random() - 0.5) * 0.1;
+          }
+          ripples.push({ x: px, y: py, r: 8, a: 0.5 });
+        }
+        const ripples = [];
+
+        let raf, t = 0;
+        function frame() {
+          t += 0.016;
+          ctx.fillStyle = "#0d0e16";
+          ctx.fillRect(0, 0, W, H);
+
+          // 背面にうっすら WPY
+          const breathe = 1 + Math.sin(t * 0.5) * 0.02;
+          ctx.save();
+          ctx.translate(W / 2, H / 2);
+          ctx.scale(breathe, breathe);
+          ctx.font = `900 ${Math.min(W, H) * 0.34}px "Helvetica Neue", Arial, sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = "rgba(255,255,255,0.05)";
+          ctx.fillText("WPY", 0, 0);
+          ctx.restore();
+
+          for (const r of ripples) {
+            r.r += 7; r.a *= 0.94;
+            ctx.beginPath();
+            ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255,255,255,${r.a})`;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+          }
+          for (let i = ripples.length - 1; i >= 0; i--)
+            if (ripples[i].a < 0.02) ripples.splice(i, 1);
+
+          const m = 60; // 端の折り返しマージン
+          for (const s of sprites) {
+            s.kx *= 0.94; s.ky *= 0.94;
+            s.x += s.vx + s.kx + Math.sin(t * 0.8 + s.phase) * 0.18;
+            s.y += s.vy + s.ky + Math.cos(t * 0.6 + s.phase) * 0.18;
+            s.rot += s.vr;
+            s.vr *= 0.995;
+            if (s.x < -m) s.x = W + m; if (s.x > W + m) s.x = -m;
+            if (s.y < -m) s.y = H + m; if (s.y > H + m) s.y = -m;
+
+            ctx.save();
+            ctx.translate(s.x, s.y);
+            ctx.rotate(s.rot);
+            ctx.globalAlpha = s.alpha;
+            ctx.drawImage(s.img, -s.size / 2, -s.size / 2, s.size, s.size);
+            ctx.restore();
+          }
+          raf = requestAnimationFrame(frame);
+        }
+        frame();
+
+        function onPointer(e) {
+          const rect = canvas.getBoundingClientRect();
+          poke(e.clientX - rect.left, e.clientY - rect.top);
+        }
+        root.addEventListener("pointerdown", onPointer);
+        addEventListener("resize", resize);
+        return () => { cancelAnimationFrame(raf); removeEventListener("resize", resize); };
+      }
+
+      /* ---------------------------------------------------------
+         variant 2: TYPE — でかい WPY。文字クリックで回転、
+         背景クリックで配色チェンジ。
+      --------------------------------------------------------- */
+      function makeType(root) {
+        root.className = "v-type";
+
+        const PALETTES = [
+          { bg: "#f4f1ea", ink: "#1c1b18", dark: false },
+          { bg: "#1c1b18", ink: "#f4f1ea", dark: true },
+          { bg: "#ffd166", ink: "#22223b", dark: false },
+          { bg: "#22577a", ink: "#c7f9cc", dark: true },
+          { bg: "#f2b5d4", ink: "#3a2e39", dark: false },
+          { bg: "#0b3d2e", ink: "#ffe8a3", dark: true },
+        ];
+        let pi = Math.floor(Math.random() * PALETTES.length);
+        function applyPalette() {
+          const p = PALETTES[pi];
+          root.style.setProperty("--bg", p.bg);
+          root.style.setProperty("--ink", p.ink);
+          // 黒一色のマスコットが暗い背景に沈まないように反転
+          root.style.setProperty("--mascot-filter", p.dark ? "invert(1)" : "none");
+        }
+        applyPalette();
+
+        const stripes = document.createElement("div");
+        stripes.className = "stripes";
+        stripes.setAttribute("aria-hidden", "true");
+        const rows = 7;
+        for (let i = 0; i < rows; i++) {
+          const row = document.createElement("div");
+          row.className = "stripe" + (i % 2 ? " rev" : "");
+          row.style.setProperty("--dur", 30 + Math.random() * 30 + "s");
+          const span = document.createElement("span");
+          span.textContent = "WPY ".repeat(60);
+          row.appendChild(span);
+          stripes.appendChild(row);
+        }
+        root.appendChild(stripes);
+
+        const word = document.createElement("div");
+        word.className = "word";
+        for (const ch of "WPY") {
+          const s = document.createElement("span");
+          s.textContent = ch;
+          s.addEventListener("pointerdown", e => {
+            e.stopPropagation();
+            s.classList.remove("spin");
+            void s.offsetWidth; // アニメ再始動
+            s.classList.add("spin");
+          });
+          word.appendChild(s);
+        }
+        root.appendChild(word);
+
+        const mascot = document.createElement("img");
+        mascot.src = ICON;
+        mascot.alt = "";
+        mascot.className = "mascot";
+        root.appendChild(mascot);
+
+        root.addEventListener("pointerdown", () => {
+          pi = (pi + 1) % PALETTES.length;
+          applyPalette();
+        });
+        return () => {};
+      }
+
+      /* ---------------------------------------------------------
+         variant 3: ARCADE — 架空ゲームのタイトル画面。
+         クリックでクレジット投入。
+      --------------------------------------------------------- */
+      function makeArcade(root) {
+        root.className = "v-arcade";
+        let credits = 0;
+        root.innerHTML = `
+          <div class="crt">
+            <div class="hud"><span>1UP&nbsp;&nbsp;000000</span><span>HI-SCORE&nbsp;&nbsp;300000</span></div>
+            <div class="logo">WPY</div>
+            <div class="sub">GALACTIC WARP SHOOTING</div>
+            <div class="press">PRESS START</div>
+            <div class="copyright">&copy; 2026 WPY CO.,LTD. &nbsp; CREDIT <span class="cr">00</span></div>
+            <img class="walker" src="${ICON}" alt="">
           </div>
-        </div>
-      </div>
+          <div class="scanlines"></div>`;
 
-      <div id="links" class="tab-content">
-        <div class="content-inner">
-          <ul class="link-list">
-            <li><a href="https://warpshoot.github.io/desu" target="_blank">DESU™︎</a></li>
-            <li><a href="https://note.com/wpy" target="_blank">note（雑記）</a></li>
-            <li><a href="https://minne.com/@warpshoot" target="_blank">minne（置き物販売）</a></li>
-            <li><a href="https://line.me/S/shop/sticker/author/28817" target="_blank">LINE スタンプ</a></li>
-            <li><a href="https://suzuri.jp/wpy" target="_blank">SUZURI（その他グッズ）</a></li>
-          </ul>
-        </div>
-      </div>
-
-      <div id="hello" class="tab-content">
-        <div class="content-inner">
-          <img src="pfp.jpg" alt="pfp" class="pfp">
-          <p>ワーピー（wpy）は、絵を描いたり置き物を作ったりWebツールをこしらえたりしている個人作家です。</p>
-          <p>平面と立体、虚構と現実のあいだをふらふらと行き来しながら、
-            ふと手に取って、そばに置いておきたくなるような作品づくりを目指しています。</p>
-          <p>近況やお知らせ、制作過程をSNS（主にX）で垂れ流しつつ、ときどき販売や展示も行っています。</p>
-
-          <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 30px 0;">
-
-          <p>XなどSNSよりご連絡ください。<br>
-            相談は無料です。お気軽に。</p>
-          <a href="https://x.com/warpshoot" target="_blank">
-            <img src="xlogo.png" alt="X" class="xlogo">
-          </a>
-        </div>
-      </div>
-
-      <div class="footer">&copy; 2026 wpy / warpshoot</div>
-      <div class="footer-fade"></div>
-    </div>
-  </div>
-
-  <script>
-    const buttons = document.querySelectorAll('.tab-button');
-    const tabs = document.querySelectorAll('.tab-content');
-    let currentTab = null;
-
-    buttons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const selectedTab = btn.dataset.tab;
-        if (currentTab === selectedTab) return;
-        buttons.forEach(b => b.classList.remove('active'));
-        tabs.forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
-        const tab = document.getElementById(selectedTab);
-        if (tab) tab.classList.add('active');
-        currentTab = selectedTab;
-      });
-    });
-
-    document.addEventListener("DOMContentLoaded", () => {
-      const wpyTitle = document.getElementById("wpy-title");
-      if (wpyTitle) {
-        wpyTitle.addEventListener("click", () => location.reload());
+        const crEl = root.querySelector(".cr");
+        const pressEl = root.querySelector(".press");
+        let resetTimer;
+        root.addEventListener("pointerdown", () => {
+          credits = Math.min(credits + 1, 99);
+          crEl.textContent = String(credits).padStart(2, "0");
+          root.classList.remove("zap");
+          void root.offsetWidth;
+          root.classList.add("zap");
+          pressEl.textContent = "STAGE 1 — READY?";
+          clearTimeout(resetTimer);
+          resetTimer = setTimeout(() => { pressEl.textContent = "PRESS START"; }, 1600);
+        });
+        return () => clearTimeout(resetTimer);
       }
-    });
-  </script>
 
-  <script>
-    const imagePaths = [
-      "img/01.jpg", "img/02.jpg", "img/03.gif", "img/04.jpg", "img/05.jpg",
-      "img/06.png", "img/07.gif", "img/08.jpg", "img/09.gif", "img/10.jpg", "img/11.gif"
-    ];
+      /* --------------------------------------------------------- */
+      const variants = [makeFloat, makeType, makeArcade];
 
-    const bgContainer = document.getElementById("bg-container");
-    const images = imagePaths.map((path, index) => {
-      const img = document.createElement("img");
-      img.src = path;
-      img.className = "background-image";
-      if (index === 0) img.classList.add("active");
-      bgContainer.appendChild(img);
-      return img;
-    });
+      let current = -1;
+      let cleanup = () => {};
 
-    let currentIndex = 0;
-    function shuffle(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+      function show(idx, icon) {
+        cleanup();
+        stage.innerHTML = "";
+        current = idx;
+        const el = document.createElement("div");
+        stage.appendChild(el); // 先にDOMへ追加してからサイズ計測込みの初期化
+        cleanup = variants[idx](el, icon) || (() => {});
       }
-      return array;
-    }
 
-    const shuffledImages = shuffle([...images]);
+      const icon = new Image();
+      icon.src = ICON;
 
-    function changeBackground() {
-      shuffledImages.forEach(img => {
-        img.style.opacity = "0";
-        img.style.filter = "blur(20px)";
+      // ?v=1..3 で固定表示（動作確認用）。指定なしはランダム。
+      const forced = parseInt(new URLSearchParams(location.search).get("v"), 10);
+      const first = forced >= 1 && forced <= variants.length
+        ? forced - 1
+        : Math.floor(Math.random() * variants.length);
+
+      function start() { show(first, icon); }
+      if (icon.complete) start();
+      else { icon.onload = start; icon.onerror = start; }
+
+      document.getElementById("next-btn").addEventListener("click", e => {
+        e.stopPropagation();
+        show((current + 1) % variants.length, icon);
       });
-      const currentImage = shuffledImages[currentIndex];
-      currentImage.style.opacity = "1";
-      currentImage.style.filter = "blur(6px)";
-      currentIndex = (currentIndex + 1) % shuffledImages.length;
-    }
-
-    setTimeout(() => {
-      const currentImage = shuffledImages[currentIndex];
-      currentImage.style.opacity = "1";
-      currentImage.style.filter = "blur(6px)";
-    }, 50);
-
-    setTimeout(() => {
-      changeBackground();
-      setInterval(changeBackground, 7000);
-    }, 500);
+    })();
   </script>
-
 </body>
 
-
 </html>
-
-
-
-
