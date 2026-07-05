@@ -538,10 +538,11 @@
                 ebullets.push({ x: W / 2, y: boss.y + boss.size * 0.2, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, homing: false });
               }
             }
-            // 完全ホーミング弾(逃げられない)
+            // ホーミング弾(見た目・初速とも通常の放射弾に偽装。じわっと寄って必殺)
             if (boss.homingAt && now >= boss.homingAt) {
               boss.homingAt = now + 800;
-              ebullets.push({ x: W / 2, y: boss.y + boss.size * 0.25, vx: 0, vy: 4, homing: true });
+              const a = Math.random() * Math.PI * 2;
+              ebullets.push({ x: W / 2, y: boss.y + boss.size * 0.2, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, homing: true });
             }
           }
 
@@ -560,9 +561,14 @@
         // 敵弾
         for (const b of ebullets) {
           if (b.homing) {
+            // 瞬時ロックだと動きで必殺弾だとバレるので、通常弾に近い速度で
+            // じわっと寄せる。速すぎず・向きを急に変えず、通常弾のドリフトに偽装。
             const dx = player.x - b.x, dy = player.y - b.y;
             const d = Math.hypot(dx, dy) || 1;
-            b.vx = (dx / d) * 5.4; b.vy = (dy / d) * 5.4;
+            const sp = 4.4;
+            const tx = (dx / d) * sp, ty = (dy / d) * sp;
+            b.vx += (tx - b.vx) * 0.16;
+            b.vy += (ty - b.vy) * 0.16;
           }
           b.x += b.vx; b.y += b.vy;
           if (Math.hypot(b.x - player.x, b.y - player.y) < 16) {
@@ -734,13 +740,13 @@
             drawBossUI();
           }
 
-          // 敵弾(ホーミング弾は大きめ+明滅で区別)
+          // 敵弾(ホーミング弾も通常弾と完全に同じ見た目にして紛れさせる)
           for (const b of ebullets) {
             ctx.beginPath();
-            ctx.arc(b.x, b.y, b.homing ? (Math.floor(now / 90) % 2 ? 8 : 6.5) : 5, 0, Math.PI * 2);
-            ctx.fillStyle = b.homing ? "#eafff2" : "#9fffc9";
-            ctx.shadowColor = ctx.fillStyle;
-            ctx.shadowBlur = b.homing ? 18 : 10;
+            ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = "#9fffc9";
+            ctx.shadowColor = "#9fffc9";
+            ctx.shadowBlur = 10;
             ctx.fill();
             ctx.shadowBlur = 0;
           }
