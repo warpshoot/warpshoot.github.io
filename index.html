@@ -69,9 +69,8 @@
       opacity: 0.5;
       background: repeating-linear-gradient(
         90deg,
-        rgba(255, 60, 60, 0.16) 0px, rgba(255, 60, 60, 0.16) 1px,
-        rgba(60, 255, 120, 0.16) 1px, rgba(60, 255, 120, 0.16) 2px,
-        rgba(60, 120, 255, 0.16) 2px, rgba(60, 120, 255, 0.16) 3px
+        rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0) 2px,
+        rgba(2, 18, 10, 0.4) 2px, rgba(2, 18, 10, 0.4) 3px
       );
       border-radius: inherit;
     }
@@ -135,10 +134,10 @@
       letter-spacing: 0.06em;
       line-height: 1;
       color: #aaffcf;
-      /* グロー + 色収差(赤を左・シアンを右にずらす) */
+      /* グロー + 緑ゴースト(暗緑を左・明緑を右にずらして二重像に) */
       text-shadow:
-        -2px 0 rgba(255, 60, 60, 0.6),
-        2px 0 rgba(60, 200, 255, 0.6),
+        -2px 0 rgba(47, 174, 110, 0.55),
+        2px 0 rgba(200, 255, 227, 0.55),
         0 0 8px rgba(111, 255, 168, 0.9),
         0 0 32px rgba(111, 255, 168, 0.45),
         4px 4px 0 #0e5c33;
@@ -178,8 +177,8 @@
       letter-spacing: 0.06em;
       color: #aaffcf;
       text-shadow:
-        -2px 0 rgba(255, 60, 60, 0.6),
-        2px 0 rgba(60, 200, 255, 0.6),
+        -2px 0 rgba(47, 174, 110, 0.55),
+        2px 0 rgba(200, 255, 227, 0.55),
         0 0 12px rgba(111, 255, 168, 0.9),
         0 0 32px rgba(111, 255, 168, 0.45),
         3px 3px 0 #0e5c33;
@@ -745,7 +744,7 @@
           const ox = W / 2, oy = boss.y + boss.size * 0.2;
           const p = Math.min(1, (now - boss.rageAt) / 1000);
           ctx.save();
-          ctx.strokeStyle = `rgba(255,90,90,${0.12 + p * 0.55})`;
+          ctx.strokeStyle = `rgba(180,255,210,${0.12 + p * 0.55})`;
           ctx.lineWidth = 1 + p * 2;
           ctx.setLineDash([6, 10]);
           ctx.beginPath();
