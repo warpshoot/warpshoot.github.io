@@ -541,12 +541,12 @@
                 }
               }
             } else if (boss.rage === 1) {
-              // 勝利の錯覚: 攻撃が止みバーがほぼ空に。0.7秒後、全回復して溜め始める
+              // 勝利の錯覚: 攻撃が止み、バーは残りわずかのまま。0.7秒後に溜め始める
+              // (HPは減ったまま=「あと一撃だったのに」で再挑戦したくなる)
               if (now - boss.rageAt > 700) {
                 boss.rage = 2;
                 boss.rageAt = now;
-                boss.hp = 1;                 // まさかの全回復
-                shake = Math.max(shake, 12);
+                shake = Math.max(shake, 10);
               }
             } else if (boss.rage === 2) {
               // チャージ: 自機を狙う照準を出しつつエネルギーを溜める(約1秒)→ 発射
