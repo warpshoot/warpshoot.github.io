@@ -480,6 +480,9 @@
             arrived: 0,
             fireAt: 0,
             homingAt: 0,
+            rage: 0,      // 0:希望(HPが減る) 1:勝利の錯覚 2:チャージ 3:ビーム発射
+            rageAt: 0,
+            beamAng: 0, beamOx: 0, beamOy: 0,
           };
         }
 
@@ -528,34 +531,75 @@
             }
           } else {
             boss.y = targetY + Math.sin(now / 500) * 8;
+            const by = boss.y + boss.size * 0.2;
 
-            // 放射弾幕
-            if (now >= boss.fireAt) {
-              boss.fireAt = now + 300;
-              const base = Math.random() * Math.PI;
-              for (let i = 0; i < 14; i++) {
-                const a = base + (i / 14) * Math.PI * 2;
-                ebullets.push({ x: W / 2, y: boss.y + boss.size * 0.2, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, homing: false });
+            if (boss.rage === 0) {
+              // 希望フェーズ: 放射弾のみ(ちゃんと避けられる)。撃てば HP が実際に減る
+              if (now >= boss.fireAt) {
+                boss.fireAt = now + 300;
+                const base = Math.random() * Math.PI;
+                for (let i = 0; i < 14; i++) {
+                  const a = base + (i / 14) * Math.PI * 2;
+                  ebullets.push({ x: W / 2, y: by, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, homing: false });
+                }
               }
-            }
-            // ホーミング弾(見た目・初速とも通常の放射弾に偽装。じわっと寄って必殺)
-            if (boss.homingAt && now >= boss.homingAt) {
-              boss.homingAt = now + 800;
-              const a = Math.random() * Math.PI * 2;
-              ebullets.push({ x: W / 2, y: boss.y + boss.size * 0.2, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, homing: true });
+            } else if (boss.rage === 1) {
+              // 勝利の錯覚: 攻撃が止みバーがほぼ空に。0.7秒後、全回復して溜め始める
+              if (now - boss.rageAt > 700) {
+                boss.rage = 2;
+                boss.rageAt = now;
+                boss.hp = 1;                 // まさかの全回復
+                shake = Math.max(shake, 12);
+              }
+            } else if (boss.rage === 2) {
+              // チャージ: 自機を狙う照準を出しつつエネルギーを溜める(約1秒)→ 発射
+              shake = Math.max(shake, (now - boss.rageAt) / 130);
+              if (now - boss.rageAt > 1000) {
+                boss.rage = 3;
+                boss.rageAt = now;
+                // 発射の瞬間に自機位置へロック → 直線ビーム(回避不能)
+                boss.beamOx = W / 2; boss.beamOy = by;
+                boss.beamAng = Math.atan2(player.y - by, player.x - W / 2);
+                shake = 32; flashA = 0.7;
+              }
+            } else {
+              // 発射中: ビーム持続。約0.6秒後に外していれば再チャージ(死ぬまで撃つ)
+              if (now - boss.rageAt > 600) {
+                boss.rage = 2;
+                boss.rageAt = now;
+              }
             }
           }
 
-          // 自弾 vs ボス(HPはほぼ減らない)
+          // 自弾 vs ボス(希望フェーズだけ HP が減り、残りわずかで発狂トリガー)
           for (const b of bullets) {
             if (Math.hypot(b.x - W / 2, b.y - boss.y) < boss.size * 0.35) {
               b.hit = true;
               score += 10;
-              boss.hp = Math.max(0.94, boss.hp - 0.0015);
               explode(b.x, b.y, "#c8ffe3", 4);
+              if (boss.rage === 0) {
+                boss.hp -= 0.008;
+                if (boss.hp <= 0.18) {
+                  boss.rage = 1;
+                  boss.rageAt = now;
+                  boss.hp = 0.05;   // バーをほぼ空に見せて「勝てた」と錯覚させる
+                }
+              }
             }
           }
           bullets = bullets.filter(b => !b.hit);
+
+          // 理不尽ビームの直撃判定(発射直後は少し猶予してビームを見せてから殺す)
+          if (boss.rage === 3 && now - boss.rageAt > 90) {
+            const dx = Math.cos(boss.beamAng), dy = Math.sin(boss.beamAng);
+            const rx = player.x - boss.beamOx, ry = player.y - boss.beamOy;
+            const proj = rx * dx + ry * dy;                // ビーム方向の距離
+            const perp = Math.abs(rx * dy - ry * dx);      // ビーム軸からの横ずれ
+            if (proj > 0 && perp < 26) {
+              kill("ANNIHILATED BY WPY CANNON");
+              return;
+            }
+          }
         }
 
         // 敵弾
@@ -693,6 +737,50 @@
         ctx.fillRect(bx + 1.5, by + 1.5, (bw - 3) * boss.hp, 7);
       }
 
+      // 溜め演出 & 理不尽ビームの描画
+      function drawBossRage() {
+        if (!boss) return;
+        if (boss.rage === 2) {
+          // チャージ: 自機を狙う照準ライン + 溜まっていくエネルギー球
+          const ox = W / 2, oy = boss.y + boss.size * 0.2;
+          const p = Math.min(1, (now - boss.rageAt) / 1000);
+          ctx.save();
+          ctx.strokeStyle = `rgba(255,90,90,${0.12 + p * 0.55})`;
+          ctx.lineWidth = 1 + p * 2;
+          ctx.setLineDash([6, 10]);
+          ctx.beginPath();
+          ctx.moveTo(ox, oy); ctx.lineTo(player.x, player.y); ctx.stroke();
+          ctx.restore();
+          const r = 4 + p * Math.min(W, H) * 0.05 + Math.random() * 3;
+          ctx.beginPath();
+          ctx.arc(ox, oy, r, 0, Math.PI * 2);
+          ctx.fillStyle = "#eafff2";
+          ctx.shadowColor = "#7cffb0";
+          ctx.shadowBlur = 20 + p * 30;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        } else if (boss.rage === 3) {
+          // 発射: ロックした方向へ直線ビーム
+          const ox = boss.beamOx, oy = boss.beamOy;
+          const dx = Math.cos(boss.beamAng), dy = Math.sin(boss.beamAng);
+          const len = Math.hypot(W, H) * 1.2;
+          const ex = ox + dx * len, ey = oy + dy * len;
+          const flick = 0.82 + Math.random() * 0.18;
+          ctx.save();
+          ctx.lineCap = "round";
+          ctx.strokeStyle = `rgba(124,255,176,${0.5 * flick})`;
+          ctx.lineWidth = 52 * flick;
+          ctx.shadowColor = "#7cffb0";
+          ctx.shadowBlur = 40;
+          ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = `rgba(234,255,242,${flick})`;
+          ctx.lineWidth = 22 * flick;
+          ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+          ctx.restore();
+        }
+      }
+
       function draw() {
         ctx.clearRect(0, 0, W, H);
 
@@ -739,6 +827,7 @@
             ctx.restore();
             drawBossUI();
           }
+          if (boss) drawBossRage();
 
           // 敵弾(ホーミング弾も通常弾と完全に同じ見た目にして紛れさせる)
           for (const b of ebullets) {
