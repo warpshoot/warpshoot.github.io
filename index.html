@@ -478,7 +478,6 @@
             hp: 1,
             arrived: 0,
             fireAt: 0,
-            homingAt: 0,
             rage: 0,      // 0:希望(HPが減る) 1:勝利の錯覚 2:チャージ 3:ビーム発射
             rageAt: 0,
             beamAng: 0, beamOx: 0, beamOy: 0,
@@ -526,7 +525,6 @@
             if (boss.y >= targetY - 4) {
               boss.arrived = now;
               boss.fireAt = now + 700;
-              boss.homingAt = now + 2400;
             }
           } else {
             boss.y = targetY + Math.sin(now / 500) * 8;
@@ -539,7 +537,7 @@
                 const base = Math.random() * Math.PI;
                 for (let i = 0; i < 14; i++) {
                   const a = base + (i / 14) * Math.PI * 2;
-                  ebullets.push({ x: W / 2, y: by, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, homing: false });
+                  ebullets.push({ x: W / 2, y: by, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3 });
                 }
               }
             } else if (boss.rage === 1) {
@@ -601,18 +599,8 @@
           }
         }
 
-        // 敵弾
+        // 敵弾(放射弾)
         for (const b of ebullets) {
-          if (b.homing) {
-            // 瞬時ロックだと動きで必殺弾だとバレるので、通常弾に近い速度で
-            // じわっと寄せる。速すぎず・向きを急に変えず、通常弾のドリフトに偽装。
-            const dx = player.x - b.x, dy = player.y - b.y;
-            const d = Math.hypot(dx, dy) || 1;
-            const sp = 4.4;
-            const tx = (dx / d) * sp, ty = (dy / d) * sp;
-            b.vx += (tx - b.vx) * 0.16;
-            b.vy += (ty - b.vy) * 0.16;
-          }
           b.x += b.vx; b.y += b.vy;
           if (Math.hypot(b.x - player.x, b.y - player.y) < 16) {
             kill("DESTROYED BY GIANT WPY");
@@ -828,7 +816,7 @@
           }
           if (boss) drawBossRage();
 
-          // 敵弾(ホーミング弾も通常弾と完全に同じ見た目にして紛れさせる)
+          // 敵弾(放射弾)
           for (const b of ebullets) {
             ctx.beginPath();
             ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
