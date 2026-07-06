@@ -365,6 +365,7 @@
         shake = 22;
         flashA = 0.9;
         lastScore = score;
+        bullets = [];   // 自機と一緒に自弾も消す(死亡後はワールドだけ動かす)
         for (let i = 0; i < 42; i++) {
           const a = Math.random() * Math.PI * 2, v = 1 + Math.random() * 6;
           particles.push({
@@ -459,20 +460,26 @@
       }
 
       function updatePlay() {
-        // 移動(キー)
-        const sp = 6;
-        if (keys.ArrowLeft || keys.a) player.x -= sp;
-        if (keys.ArrowRight || keys.d) player.x += sp;
-        if (keys.ArrowUp || keys.w) player.y -= sp;
-        if (keys.ArrowDown || keys.s) player.y += sp;
-        player.x = Math.max(24, Math.min(W - 24, player.x));
-        player.y = Math.max(H * 0.4, Math.min(H - 40, player.y));
+        // 自機が生存しているのは play のときだけ。dying / gameover では
+        // プレイヤー操作・射撃・被弾判定は止め、ボスや敵はそのまま動かし続ける。
+        const alive = state === "play";
 
-        // 自動連射
-        if (now >= fireAt) {
-          bullets.push({ x: player.x - 7, y: player.y - 18 });
-          bullets.push({ x: player.x + 7, y: player.y - 18 });
-          fireAt = now + 150;
+        if (alive) {
+          // 移動(キー)
+          const sp = 6;
+          if (keys.ArrowLeft || keys.a) player.x -= sp;
+          if (keys.ArrowRight || keys.d) player.x += sp;
+          if (keys.ArrowUp || keys.w) player.y -= sp;
+          if (keys.ArrowDown || keys.s) player.y += sp;
+          player.x = Math.max(24, Math.min(W - 24, player.x));
+          player.y = Math.max(H * 0.4, Math.min(H - 40, player.y));
+
+          // 自動連射
+          if (now >= fireAt) {
+            bullets.push({ x: player.x - 7, y: player.y - 18 });
+            bullets.push({ x: player.x + 7, y: player.y - 18 });
+            fireAt = now + 150;
+          }
         }
         bullets.forEach(b => b.y -= 10);
         bullets = bullets.filter(b => b.y > -20);
@@ -522,11 +529,13 @@
         bullets = bullets.filter(b => !b.hit);
         enemies = enemies.filter(e => !e.dead);
 
-        // 雑魚 vs 自機
-        for (const e of enemies) {
-          if (Math.hypot(e.x - player.x, e.y - player.y) < e.size * 0.5 + 14) {
-            kill("SHOT DOWN BY ENEMY FIGHTER");
-            return;
+        // 雑魚 vs 自機(生存時のみ)
+        if (alive) {
+          for (const e of enemies) {
+            if (Math.hypot(e.x - player.x, e.y - player.y) < e.size * 0.5 + 14) {
+              kill("SHOT DOWN BY ENEMY FIGHTER");
+              return;
+            }
           }
         }
 
@@ -628,7 +637,7 @@
           bullets = bullets.filter(b => !b.hit);
 
           // 理不尽ビームの直撃判定(発射直後は少し猶予してビームを見せてから殺す)
-          if (boss.rage === 3 && now - boss.rageAt > 90) {
+          if (alive && boss.rage === 3 && now - boss.rageAt > 90) {
             const dx = Math.cos(boss.beamAng), dy = Math.sin(boss.beamAng);
             const rx = player.x - boss.beamOx, ry = player.y - boss.beamOy;
             const proj = rx * dx + ry * dy;                // ビーム方向の距離
@@ -640,10 +649,10 @@
           }
         }
 
-        // 敵弾(放射弾)
+        // 敵弾(放射弾)。弾は常に動かし、当たり判定は生存時のみ
         for (const b of ebullets) {
           b.x += b.vx; b.y += b.vy;
-          if (Math.hypot(b.x - player.x, b.y - player.y) < 16) {
+          if (alive && Math.hypot(b.x - player.x, b.y - player.y) < 16) {
             kill("DESTROYED BY GIANT WPY");
             return;
           }
@@ -834,7 +843,8 @@
           shake *= 0.88;
         }
 
-        const scroll = state === "play" || state === "dying" ? 3.2 : 0.7;
+        const inBattle = state === "play" || state === "dying" || state === "gameover";
+        const scroll = inBattle ? 3.2 : 0.7;
         drawStars(scroll);
 
         if (state === "ready") {
@@ -853,7 +863,7 @@
           if (now - readyAt > 1600) beginPlay();
         }
 
-        if (state === "play" || state === "dying") {
+        if (inBattle) {
           // 雑魚
           for (const e of enemies) drawEnemy(e);
 
@@ -946,7 +956,9 @@
       function frame(t) {
         now = t;
         last = t;
-        if (state === "play") updatePlay();
+        // 死亡後(dying/gameover)もワールドは動かし続ける。updatePlay 側で
+        // 自機の操作・被弾は生存時のみに絞ってある。
+        if (state === "play" || state === "dying" || state === "gameover") updatePlay();
         draw();
         requestAnimationFrame(frame);
       }
